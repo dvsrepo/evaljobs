@@ -45,9 +45,6 @@ evaljobs examples/midicaps_eval.py \
 
 ## How it works
 
-1. Uploads your eval script to the Space
-2. Uploads the runner script to the Space
-3. Submits a job to HF Jobs that:
-   - Downloads your eval script
-   - Runs `inspect eval` with your model
-   - Uploads bundled logs back to the Space
+1. For custom eval scripts: uploads your eval script to the Space. For inspect_evals: uses the inspect_evals path directly
+2. Submits a job to HF Jobs that runs the evaluation
+3. Results are uploaded to your Space where you can browse, share, and analyze them
