@@ -1,0 +1,19 @@
+# Python
+__pycache__/
+*.py[oc]
+*.egg-info/
+build/
+dist/
+
+# Virtual environments
+.venv/
+.mypy_cache/
+
+# Logs
+logs/
+
+# IDE
+.claude/
+
+# UV
+uv.lock

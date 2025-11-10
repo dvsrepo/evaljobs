@@ -1,0 +1,20 @@
+[project]
+name = "evaljobs"
+version = "0.1.0"
+description = "Run Inspect AI evals on Hugging Face Jobs"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "huggingface-hub>=0.27.0",
+    "inspect-ai>=0.3.0",
+]
+
+[project.scripts]
+evaljobs = "evaljobs.cli:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.uv]
+dev-dependencies = []
