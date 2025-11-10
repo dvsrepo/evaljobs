@@ -8,6 +8,7 @@
 #     "transformers",
 #     "accelerate",
 #     "huggingface_hub",
+#     "inspect_evals",
 # ]
 # ///
 """Runner that downloads an eval script and executes it using inspect CLI."""
@@ -58,27 +59,40 @@ def bundle_and_upload_to_space(log_dir: str, hf_space_id: str, hf_token: str):
 
 if __name__ == "__main__":
     if len(sys.argv) < 4:
-        print("Usage: eval_runner.py <eval_url> <model> <space_id> [log_dir] [extra_args...]")
+        print("Usage: eval_runner.py <eval_ref> <model> <space_id> [log_dir] [--inspect-evals] [extra_args...]")
         sys.exit(1)
 
-    eval_script_url = sys.argv[1]
+    eval_ref = sys.argv[1]
     model = sys.argv[2]
     hf_space_id = sys.argv[3]
-    log_dir = sys.argv[4] if len(sys.argv) > 4 else "./logs"
-    extra_args = sys.argv[5:] if len(sys.argv) > 5 else []
+    log_dir = sys.argv[4] if len(sys.argv) > 4 and not sys.argv[4].startswith("--") else "./logs"
 
-    print(f"Downloading eval from {eval_script_url}...")
-    with urllib.request.urlopen(eval_script_url) as response:
-        eval_code = response.read().decode('utf-8')
+    # Check if this is an inspect_evals path
+    is_inspect_evals = "--inspect-evals" in sys.argv
+    extra_args = [arg for arg in sys.argv[5:] if arg != "--inspect-evals"]
 
-    eval_filename = "downloaded_eval.py"
-    with open(eval_filename, 'w') as f:
-        f.write(eval_code)
+    if is_inspect_evals:
+        # Use inspect_evals path directly
+        print(f"Using inspect_evals: {eval_ref}")
+        eval_target = eval_ref
+        cleanup_file = None
+    else:
+        # Download custom eval script
+        print(f"Downloading eval from {eval_ref}...")
+        with urllib.request.urlopen(eval_ref) as response:
+            eval_code = response.read().decode('utf-8')
+
+        eval_filename = "downloaded_eval.py"
+        with open(eval_filename, 'w') as f:
+            f.write(eval_code)
+
+        eval_target = eval_filename
+        cleanup_file = eval_filename
 
     try:
         print(f"Running inspect eval with model {model}...")
         cmd = [
-            "inspect", "eval", eval_filename,
+            "inspect", "eval", eval_target,
             "--model", model,
             "--log-dir", log_dir,
         ]
@@ -95,5 +109,5 @@ if __name__ == "__main__":
             bundle_and_upload_to_space(log_dir, hf_space_id, hf_token)
 
     finally:
-        if os.path.exists(eval_filename):
-            os.unlink(eval_filename)
+        if cleanup_file and os.path.exists(cleanup_file):
+            os.unlink(cleanup_file)

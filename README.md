@@ -1,18 +1,36 @@
 # evaljobs
 
-Run Inspect AI evals on Hugging Face Jobs.
+Evaluate open models on Hugging Face GPUs.
+
+Write your own evals using [Inspect](https://inspect.aisi.org.uk/) or use the built-in integration with [inspect_evals](https://github.com/UKGovernmentBEIS/inspect_evals) gives you instant access to hundreds of pre-built evaluations including ARC, MMLU, GSM8K, HumanEval, GPQA, and more.
 
 ## Installation
 
 ```bash
-pip install -e .
+pip install git+https://github.com/dvsrepo/evaljobs.git
 ```
 
 ## Usage
 
+### Run inspect_evals (hundreds of benchmarks available)
+```bash
+# ARC Easy
+evaljobs inspect_evals/arc_easy \
+  --model hf/Qwen/Qwen3-0.6B \
+  --space your-username/arc_easy-Qwen3-0.6B \
+  --flavor t4-small
+
+# MMLU, GSM8K, HumanEval, GPQA, etc.
+evaljobs inspect_evals/mmlu \
+  --model hf/Qwen/Qwen3-0.6B \
+  --space your-username/mmlu-Qwen3-0.6B \  
+  --flavor t4-small
+```
+
+### Run custom eval scripts
 ```bash
 evaljobs examples/midicaps_eval.py \
-  --model hf/frascuchon/midigen-Qwen3-0.6B \
+  --model hf/Qwen/Qwen3-0.6B \
   --space your-username/eval-logs \
   --flavor t4-small
 ```

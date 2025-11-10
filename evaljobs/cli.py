@@ -33,7 +33,10 @@ def main():
 
     args = parser.parse_args()
 
-    if not args.script.startswith("http") and not Path(args.script).exists():
+    # Check if it's an inspect_evals path or a local file
+    is_inspect_evals = args.script.startswith("inspect_evals/")
+
+    if not is_inspect_evals and not args.script.startswith("http") and not Path(args.script).exists():
         print(f"✗ Error: Eval script '{args.script}' not found", file=sys.stderr)
         sys.exit(1)
 
@@ -61,14 +64,20 @@ def main():
         )
 
         print("[2/3] Uploading files...")
-        eval_filename = Path(args.script).name
-        api.upload_file(
-            path_or_fileobj=args.script,
-            path_in_repo=f"eval_{eval_filename}",
-            repo_id=args.space,
-            repo_type="space",
-        )
-        eval_url = f"https://huggingface.co/spaces/{args.space}/resolve/main/eval_{eval_filename}"
+
+        if is_inspect_evals:
+            # For inspect_evals, pass the path directly (no upload needed)
+            eval_ref = args.script
+        else:
+            # For local files, upload to space
+            eval_filename = Path(args.script).name
+            api.upload_file(
+                path_or_fileobj=args.script,
+                path_in_repo=f"eval_{eval_filename}",
+                repo_id=args.space,
+                repo_type="space",
+            )
+            eval_ref = f"https://huggingface.co/spaces/{args.space}/resolve/main/eval_{eval_filename}"
 
         runner_path = Path(__file__).parent / "runner.py"
         api.upload_file(
@@ -80,7 +89,9 @@ def main():
         runner_url = f"https://huggingface.co/spaces/{args.space}/resolve/main/runner.py"
 
         print("[3/3] Submitting job...")
-        script_args = [eval_url, args.model, args.space, args.log_dir]
+        script_args = [eval_ref, args.model, args.space, args.log_dir]
+        if is_inspect_evals:
+            script_args.append("--inspect-evals")
 
         if args.limit:
             script_args.extend(["--limit", str(args.limit)])
