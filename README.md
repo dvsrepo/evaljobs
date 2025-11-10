@@ -2,7 +2,7 @@
 
 Evaluate open models on Hugging Face GPUs.
 
-Write your own evals using [Inspect](https://inspect.aisi.org.uk/) or use the built-in integration with [inspect_evals](https://github.com/UKGovernmentBEIS/inspect_evals) gives you instant access to hundreds of pre-built evaluations including ARC, MMLU, GSM8K, HumanEval, GPQA, and more.
+Write your own evals using [Inspect](https://inspect.aisi.org.uk/) or use [inspect_evals](https://github.com/UKGovernmentBEIS/inspect_evals), which gives you instant access to hundreds of pre-built evaluations, including ARC, MMLU, GSM8K, HumanEval, GPQA, and more.
 
 ## Installation
 
