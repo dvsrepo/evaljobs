@@ -47,9 +47,8 @@ evaljobs my_eval.py \
   --flavor t4-small
 ```
 
-### Run someone else's eval from their Space
+### Run eval from a Space
 ```bash
-# Coming soon
 evaljobs https://huggingface.co/spaces/username/eval-name \
   --model hf/Qwen/Qwen3-0.6B \
   --space username/my-results

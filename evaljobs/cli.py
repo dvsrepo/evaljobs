@@ -3,6 +3,8 @@
 import argparse
 import os
 import sys
+import tempfile
+import urllib.request
 from pathlib import Path
 from huggingface_hub import run_uv_job, HfApi
 
@@ -68,16 +70,43 @@ def main():
         if is_inspect_evals:
             # For inspect_evals, pass the path directly (no upload needed)
             eval_ref = args.script
-        else:
-            # For local files, upload to space
-            eval_filename = Path(args.script).name
+        elif args.script.startswith("http"):
+            # For Space URLs, download and re-upload as eval.py
+            source_space_id = args.script.replace("https://huggingface.co/spaces/", "").rstrip("/")
+
+            files = api.list_repo_files(repo_id=source_space_id, repo_type="space")
+            eval_files = [f for f in files if f.startswith("eval") and f.endswith(".py")]
+
+            if not eval_files:
+                print(f"✗ Error: No eval script found in Space {source_space_id}", file=sys.stderr)
+                sys.exit(1)
+
+            source_eval_url = f"https://huggingface.co/spaces/{source_space_id}/resolve/main/{eval_files[0]}"
+
+            with urllib.request.urlopen(source_eval_url) as response:
+                eval_content = response.read()
+
+            with tempfile.NamedTemporaryFile(mode='wb', suffix='.py', delete=False) as tmp:
+                tmp.write(eval_content)
+                tmp_path = tmp.name
+
             api.upload_file(
-                path_or_fileobj=args.script,
-                path_in_repo=f"eval_{eval_filename}",
+                path_or_fileobj=tmp_path,
+                path_in_repo="eval.py",
                 repo_id=args.space,
                 repo_type="space",
             )
-            eval_ref = f"https://huggingface.co/spaces/{args.space}/resolve/main/eval_{eval_filename}"
+            os.unlink(tmp_path)
+            eval_ref = f"https://huggingface.co/spaces/{args.space}/resolve/main/eval.py"
+        else:
+            # For local files, upload as eval.py to destination Space
+            api.upload_file(
+                path_or_fileobj=args.script,
+                path_in_repo="eval.py",
+                repo_id=args.space,
+                repo_type="space",
+            )
+            eval_ref = f"https://huggingface.co/spaces/{args.space}/resolve/main/eval.py"
 
         runner_path = Path(__file__).parent / "runner.py"
         api.upload_file(
