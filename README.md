@@ -48,3 +48,9 @@ evaljobs examples/midicaps_eval.py \
 1. For custom eval scripts: uploads your eval script to the Space. For inspect_evals: uses the inspect_evals path directly
 2. Submits a job to HF Jobs that runs the evaluation
 3. Results are uploaded to your Space where you can browse, share, and analyze them
+
+## TODO
+
+- [ ] Support `eval-set`
+- [ ] Test/support vLLM
+- [ ] Test/support vlm's
