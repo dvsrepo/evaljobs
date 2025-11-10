@@ -51,3 +51,9 @@ evaljobs examples/midicaps_eval.py \
    - Downloads your eval script
    - Runs `inspect eval` with your model
    - Uploads bundled logs back to the Space
+
+## TODO
+
+- [ ] Support `eval-set`
+- [ ] Test/support vLLM
+- [ ] Test/support vlm's
