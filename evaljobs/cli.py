@@ -33,7 +33,7 @@ def main():
     )
     parser.add_argument("--timeout", default="30m", help="Job timeout (default: 30m)")
 
-    args = parser.parse_args()
+    args, extra_args = parser.parse_known_args()
 
     # Check if it's an inspect_evals path or a local file
     is_inspect_evals = args.script.startswith("inspect_evals/")
@@ -124,6 +124,10 @@ def main():
 
         if args.limit:
             script_args.extend(["--limit", str(args.limit)])
+
+        # Pass through any extra args to inspect
+        if extra_args:
+            script_args.extend(extra_args)
 
         job_info = run_uv_job(
             script=runner_url,
