@@ -9,6 +9,120 @@ from pathlib import Path
 from huggingface_hub import run_uv_job, HfApi
 
 
+def generate_readme(args, extra_args, eval_ref, is_inspect_evals):
+    """Generate README content for the eval space."""
+    # Build the evaljobs command - group argument-value pairs
+    cmd_lines = [f"evaljobs {args.script}"]
+    cmd_lines.append(f"  --model {args.model}")
+    cmd_lines.append(f"  --space {args.space}")
+    if args.flavor != "cpu-basic":
+        cmd_lines.append(f"  --flavor {args.flavor}")
+    if args.timeout != "30m":
+        cmd_lines.append(f"  --timeout {args.timeout}")
+    if args.limit:
+        cmd_lines.append(f"  --limit {args.limit}")
+    
+    # Handle extra args - they might be flags or key-value pairs
+    if extra_args:
+        i = 0
+        while i < len(extra_args):
+            arg = extra_args[i]
+            if arg.startswith("--") and i + 1 < len(extra_args) and not extra_args[i + 1].startswith("--"):
+                # It's a flag with a value
+                cmd_lines.append(f"  {arg} {extra_args[i + 1]}")
+                i += 2
+            else:
+                # It's a standalone flag
+                cmd_lines.append(f"  {arg}")
+                i += 1
+    
+    evaljobs_cmd = " \\\n".join(cmd_lines)
+    
+    # Build the inspect eval command (what will be run) - group argument-value pairs
+    eval_target = eval_ref if is_inspect_evals else "eval.py"
+    inspect_cmd_lines = [f"inspect eval {eval_target}"]
+    inspect_cmd_lines.append(f"  --model {args.model}")
+    inspect_cmd_lines.append(f"  --log-dir {args.log_dir}")
+    if args.limit:
+        inspect_cmd_lines.append(f"  --limit {args.limit}")
+    
+    # Handle extra args - they might be flags or key-value pairs
+    if extra_args:
+        i = 0
+        while i < len(extra_args):
+            arg = extra_args[i]
+            if arg.startswith("--") and i + 1 < len(extra_args) and not extra_args[i + 1].startswith("--"):
+                # It's a flag with a value
+                inspect_cmd_lines.append(f"  {arg} {extra_args[i + 1]}")
+                i += 2
+            else:
+                # It's a standalone flag
+                inspect_cmd_lines.append(f"  {arg}")
+                i += 1
+    
+    inspect_cmd = " \\\n".join(inspect_cmd_lines)
+    
+    # Determine eval name and script reference for "Run with other models"
+    if is_inspect_evals:
+        eval_name = eval_ref.replace("inspect_evals/", "")
+        script_ref = eval_ref
+    elif args.script.startswith("http"):
+        eval_name = "eval.py"
+        # Use current space URL since eval.py was uploaded here
+        script_ref = f"https://huggingface.co/spaces/{args.space}"
+    else:
+        eval_name = Path(args.script).stem
+        # Use current space URL since eval.py was uploaded here
+        script_ref = f"https://huggingface.co/spaces/{args.space}"
+    
+    # Format title nicely (replace underscores with spaces, title case)
+    title = eval_name.replace("_", " ").replace("-", " ").title()
+    
+    readme_content = f"""---
+title: {title}
+emoji: 📊
+colorFrom: blue
+colorTo: purple
+sdk: static
+sdk_version: "latest"
+pinned: false
+---
+
+# {eval_name}
+
+This eval was run using [evaljobs](https://github.com/dvsrepo/evaljobs).
+
+## Command
+
+```bash
+{evaljobs_cmd}
+```
+
+## Run with other models
+
+To run this eval with a different model, use:
+
+```bash
+evaljobs {script_ref} \\
+  --model <your-model> \\
+  --space <your-space> \\
+  --flavor {args.flavor}
+```
+
+Replace `<your-model>` with your model identifier (e.g., `hf/Qwen/Qwen3-1.7B`) and `<your-space>` with your desired Space ID.
+
+## Inspect eval command
+
+The eval was executed with:
+
+```bash
+{inspect_cmd}
+```
+"""
+    
+    return readme_content
+
+
 def main():
     parser = argparse.ArgumentParser(
         description="Run Inspect evals on Hugging Face Jobs"
@@ -116,6 +230,20 @@ def main():
             repo_type="space",
         )
         runner_url = f"https://huggingface.co/spaces/{args.space}/resolve/main/runner.py"
+
+        # Generate and upload README
+        readme_content = generate_readme(args, extra_args, eval_ref, is_inspect_evals)
+        with tempfile.NamedTemporaryFile(mode='w', suffix='.md', delete=False, encoding='utf-8') as tmp:
+            tmp.write(readme_content)
+            tmp_path = tmp.name
+        
+        api.upload_file(
+            path_or_fileobj=tmp_path,
+            path_in_repo="README.md",
+            repo_id=args.space,
+            repo_type="space",
+        )
+        os.unlink(tmp_path)
 
         print("[3/3] Submitting job...")
         script_args = [eval_ref, args.model, args.space, args.log_dir]
