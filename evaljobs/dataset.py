@@ -82,7 +82,7 @@ configs:
 
 Eval created with [evaljobs](https://github.com/dvsrepo/evaljobs).
 
-This dataset contains evaluation results for the model `{model}` using {script_text}.
+This dataset contains evaluation results for the model(s) `{model}` using {script_text}.
 
 To browse the results interactively, visit [this Space](https://huggingface.co/spaces/{space_id}).
 
