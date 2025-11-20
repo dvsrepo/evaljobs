@@ -15,7 +15,7 @@ from .dataset import (
 from .docker_space import create_docker_space
 
 
-def generate_readme(args, extra_args, eval_ref, is_inspect_evals, is_from_space, space_id):
+def generate_readme_commands(args, extra_args, eval_ref, is_inspect_evals, is_from_space, space_id):
     cmd_lines = [f"evaljobs {args.script}"]
     cmd_lines.append(f"  --model {args.model}")
     cmd_lines.append(f"  --name {args.name}")
@@ -44,7 +44,9 @@ def generate_readme(args, extra_args, eval_ref, is_inspect_evals, is_from_space,
     evaljobs_cmd = " \\\n".join(cmd_lines)
 
     eval_target = eval_ref if is_inspect_evals else "eval.py"
-    inspect_cmd_lines = [f"inspect eval {eval_target}"]
+    is_eval_set = "," in args.model
+    cmd_name = "eval-set" if is_eval_set else "eval"
+    inspect_cmd_lines = [f"inspect {cmd_name} {eval_target}"]
     inspect_cmd_lines.append(f"  --model {args.model}")
     if args.limit:
         inspect_cmd_lines.append(f"  --limit {args.limit}")
@@ -69,16 +71,29 @@ def generate_readme(args, extra_args, eval_ref, is_inspect_evals, is_from_space,
     inspect_cmd = " \\\n".join(inspect_cmd_lines)
 
     if is_inspect_evals:
-        eval_name = eval_ref.replace("inspect_evals/", "")
         script_ref = eval_ref
     elif is_from_space:
-        eval_name = "eval.py"
         script_ref = args.script if "/" in args.script and not args.script.startswith("http") else args.script.replace("https://huggingface.co/spaces/", "")
     else:
-        eval_name = Path(args.script).stem
-        script_ref = f"https://huggingface.co/spaces/{space_id}"
+        script_ref = f"{space_id}"
 
-    title = eval_name.replace("_", " ").replace("-", " ").title()
+    return evaljobs_cmd, inspect_cmd, script_ref
+
+
+def generate_readme(args, extra_args, eval_ref, is_inspect_evals, is_from_space, space_id):
+    evaljobs_cmd, inspect_cmd, script_ref = generate_readme_commands(
+        args, extra_args, eval_ref, is_inspect_evals, is_from_space, space_id
+    )
+
+    if is_inspect_evals:
+        eval_name = eval_ref.replace("inspect_evals/", "")
+        title = f"Inspect Evals/{eval_name}"
+    elif is_from_space:
+        eval_name = args.name
+        title = args.name
+    else:
+        eval_name = args.name
+        title = args.name
 
     readme_content = f"""---
 title: {title}
@@ -186,21 +201,18 @@ def main():
             hf_token=hf_token,
         )
 
-        create_dataset_readme(
-            dataset_repo=dataset_repo,
-            hf_token=hf_token,
-            name=args.name,
-            model=args.model,
-            space_id=space_id,
-            script=args.script,
-            is_inspect_evals=is_inspect_evals,
-        )
-
         print("Creating space...")
+        if is_inspect_evals:
+            eval_name = args.script.replace("inspect_evals/", "")
+            space_title = f"Inspect Evals/{eval_name}"
+        else:
+            space_title = args.name
+        
         create_docker_space(
             space_id=space_id,
             dataset_repo=dataset_repo,
             hf_token=hf_token,
+            title=space_title,
         )
 
         print("Uploading files...")
@@ -272,6 +284,24 @@ def main():
             repo_type="space",
         )
         runner_url = f"https://huggingface.co/spaces/{space_id}/resolve/main/runner.py"
+
+        evaljobs_cmd, inspect_cmd, script_ref = generate_readme_commands(
+            args, extra_args, eval_ref, is_inspect_evals, is_http_url or is_space_ref, space_id
+        )
+        
+        create_dataset_readme(
+            dataset_repo=dataset_repo,
+            hf_token=hf_token,
+            name=args.name,
+            model=args.model,
+            space_id=space_id,
+            script=args.script,
+            is_inspect_evals=is_inspect_evals,
+            evaljobs_cmd=evaljobs_cmd,
+            inspect_cmd=inspect_cmd,
+            script_ref=script_ref,
+            flavor=args.flavor,
+        )
 
         readme_content = generate_readme(
             args, extra_args, eval_ref, is_inspect_evals, is_http_url or is_space_ref, space_id

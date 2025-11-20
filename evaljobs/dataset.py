@@ -53,6 +53,10 @@ def create_dataset_readme(
     space_id: str,
     script: str,
     is_inspect_evals: bool,
+    evaljobs_cmd: str,
+    inspect_cmd: str,
+    script_ref: str,
+    flavor: str,
 ) -> None:
     api = HfApi(token=hf_token)
 
@@ -82,25 +86,43 @@ configs:
 
 Eval created with [evaljobs](https://github.com/dvsrepo/evaljobs).
 
-This dataset contains evaluation results for the model `{model}` using {script_text}.
+This dataset contains evaluation results for the model(s) `{model}` using {script_text}.
 
 To browse the results interactively, visit [this Space](https://huggingface.co/spaces/{space_id}).
 
-## How to Run This Eval
+## Command
+
+This eval was run with:
+
+```bash
+{evaljobs_cmd}
+```
+
+## Run with other models
+
+To run this eval with a different model, use:
 
 ```bash
 pip install git+https://github.com/dvsrepo/evaljobs.git
 export HF_TOKEN=your_token_here
 
-evaljobs {space_id} \\
+evaljobs {script_ref} \\
   --model <your-model> \\
   --name <your-name> \\
-  --flavor cpu-basic
+  --flavor {flavor}
 ```
 
 **Note:** For model selection, see the [Inspect AI providers documentation](https://inspect.aisi.org.uk/providers.html). Common examples:
 - Hugging Face models: `hf/meta-llama/Llama-3.1-8B-Instruct` (requires `--flavor` with GPU, e.g., `--flavor t4-medium`)
 - HF Inference Providers: `hf-inference-providers/openai/gpt-oss-120b:fastest` (use `--flavor cpu-basic` or omit)
+
+## Inspect eval command
+
+The eval was executed with:
+
+```bash
+{inspect_cmd}
+```
 
 ## Splits
 
