@@ -82,6 +82,8 @@ if __name__ == "__main__":
         dataset_repo = f"datasets/{dataset_repo}"
     log_dir = f"hf://{dataset_repo}/logs"
 
+    is_eval_set = "," in model
+
     if is_inspect_evals:
         eval_target = eval_ref
         cleanup_file = None
@@ -98,19 +100,34 @@ if __name__ == "__main__":
         cleanup_file = eval_filename
 
     try:
-        print("Running evaluation...")
-        cmd = [
-            "inspect",
-            "eval",
-            eval_target,
-            "--model",
-            model,
-            "--log-dir",
-            log_dir,
-            "--log-shared",
-            "--log-buffer",
-            "100",
-        ]
+        if is_eval_set:
+            print("Running evaluation set...")
+            cmd = [
+                "inspect",
+                "eval-set",
+                eval_target,
+                "--model",
+                model,
+                "--log-dir",
+                log_dir,
+                "--log-shared",
+                "--log-buffer",
+                "100",
+            ]
+        else:
+            print("Running evaluation...")
+            cmd = [
+                "inspect",
+                "eval",
+                eval_target,
+                "--model",
+                model,
+                "--log-dir",
+                log_dir,
+                "--log-shared",
+                "--log-buffer",
+                "100",
+            ]
         cmd.extend(extra_args)
 
         subprocess.run(cmd, check=True)

@@ -5,12 +5,11 @@ Run evals on Hugging Face GPUs. Share results and code on the Hugging Face Hub.
 ## Why evaljobs?
 
 - Access hundreds of pre-built evals from [inspect_evals](https://ukgovernmentbeis.github.io/inspect_evals/)
-- Discover community evals on Spaces
 - Write evals in Python using [Inspect AI](https://inspect.aisi.org.uk/)
 - Run on HF Jobs (CPU/GPU as needed)
 - Share and see live results on Spaces
 - Run the same eval on different models with one command
-
+- Discover community evals on Spaces
 
 
 ```mermaid
@@ -53,6 +52,14 @@ evaljobs examples/midicaps_eval.py \
 evaljobs username/space-name \
   --model hf-inference-providers/openai/gpt-oss-120b:fastest \
   --name my-eval
+```
+
+### Run eval with multiple models
+
+```bash
+evaljobs inspect_evals/arc_easy \
+  --model hf-inference-providers/openai/gpt-oss-20b:fastest,hf-inference-providers/openai/gpt-oss-120b:fastest \
+  --name arc-eval-multi
 ```
 
 ## Options
